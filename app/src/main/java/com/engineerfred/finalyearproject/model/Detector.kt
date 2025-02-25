@@ -1,4 +1,4 @@
-package com.engineerfred.finalyearproject.tutor
+package com.engineerfred.finalyearproject.model
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -11,10 +11,6 @@ import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStream
-import java.io.InputStreamReader
 
 class Detector(
     private val context: Context,
@@ -121,12 +117,12 @@ class Detector(
                 arrayIdx += numElements
             }
             if (maxConf > CONFIDENCE_THRESHOLD) {
-                val scaleFactor = 1.1F // Slightly increase box size by 10%
+                val scaleFactor = 1.8F // Slightly increase box size by 10%
                 val clsName = labels[maxIdx]
                 val cx = array[c] // 0
                 val cy = array[c + numElements] // 1
-                val w = array[c + numElements * 2] * scaleFactor
-                val h = array[c + numElements * 3] * scaleFactor
+                val w = array[c + numElements * 2]
+                val h = array[c + numElements * 2]
                 val x1 = cx - (w/2F)
                 val y1 = cy - (h/2F)
                 val x2 = cx + (w/2F)
@@ -193,8 +189,8 @@ class Detector(
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-        private const val CONFIDENCE_THRESHOLD = 0.2F
-        private const val IOU_THRESHOLD = 0.3F
+        private const val CONFIDENCE_THRESHOLD = 0.3F //2
+        private const val IOU_THRESHOLD = 0.5F //3
         private const val MODEL_PATH = "XXX.tflite"
     }
 }
