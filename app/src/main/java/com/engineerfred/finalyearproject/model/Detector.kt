@@ -191,6 +191,6 @@ class Detector(
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
         private const val CONFIDENCE_THRESHOLD = 0.3F //2
         private const val IOU_THRESHOLD = 0.5F //3
-        private const val MODEL_PATH = "XXX.tflite"
+        private const val MODEL_PATH = "boneFrac.tflite"
     }
 }
