@@ -3,6 +3,7 @@ package com.engineerfred.finalyearproject.ui.components
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Rational
 import android.widget.Toast
 import androidx.camera.core.CameraControl
@@ -64,7 +65,7 @@ import java.io.File
 @Composable
 fun CameraPreview(
     modifier: Modifier = Modifier,
-    onImageCaptured: (Bitmap) -> Unit,
+    onImageCaptured: (Uri) -> Unit,
     onClose: () -> Unit,
 ) {
     val previewUseCase = remember { Preview.Builder().build() }
@@ -226,9 +227,7 @@ fun CameraPreview(
                         val callback = object : ImageCapture.OnImageSavedCallback {
                             override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                                 outputFileResults.savedUri?.let {
-                                    it.toBitmap(context.contentResolver)?.let { bitmap ->
-                                        onImageCaptured(bitmap)
-                                    }
+                                    onImageCaptured(it)
                                 }
                                 isCapturing = false
                             }

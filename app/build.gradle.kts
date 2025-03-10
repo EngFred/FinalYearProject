@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -72,9 +73,17 @@ dependencies {
     implementation(libs.tensorflow.lite.gpu.delegate.plugin)
     implementation(libs.tensorflow.lite.gpu)
 
-    //coil
+    //coil OR glide for image loading
     implementation(libs.coil.compose)
-    //glide
     implementation(libs.glide.compose)
+
+    //retrofit
+    implementation(libs.retrofit)
+    implementation(libs.okhttp)
+    implementation(libs.converter.gson)
+    implementation(libs.logging.interceptor)
+
+    //splashScreen
+    implementation(libs.androidx.core.splashscreen)
 
 }
