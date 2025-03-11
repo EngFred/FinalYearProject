@@ -1,4 +1,4 @@
-package com.engineerfred.finalyearproject.model
+package com.engineerfred.finalyearproject.data.local
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -11,10 +11,12 @@ import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import androidx.core.graphics.scale
+import com.engineerfred.finalyearproject.domain.model.BoundingBox
+import javax.inject.Inject
 
-class Detector(
-    private val context: Context,
-    private val detectorListener: DetectorListener
+class OfflineDetector @Inject constructor(
+    private val context: Context
 ) {
 
     init {
@@ -64,41 +66,26 @@ class Detector(
         }
     }
 
-    fun clear() {
-        interpreter?.close()
-        interpreter = null
-    }
+    fun detect(frame: Bitmap) : List<BoundingBox> {
+        interpreter ?: return emptyList()
+        if (tensorWidth == 0) return emptyList()
+        if (tensorHeight == 0) return emptyList()
+        if (numChannel == 0) return emptyList()
+        if (numElements == 0) return emptyList()
 
-    fun detect(frame: Bitmap) {
-        interpreter ?: return
-        if (tensorWidth == 0) return
-        if (tensorHeight == 0) return
-        if (numChannel == 0) return
-        if (numElements == 0) return
-
-//        var inferenceTime = SystemClock.uptimeMillis()
-
-        val resizedBitmap = Bitmap.createScaledBitmap(frame, tensorWidth, tensorHeight, false)
+        val resizedBitmap = frame.scale(tensorWidth, tensorHeight, false)
 
         val tensorImage = TensorImage(DataType.FLOAT32)
         tensorImage.load(resizedBitmap)
         val processedImage = imageProcessor.process(tensorImage)
         val imageBuffer = processedImage.buffer
 
-        val output = TensorBuffer.createFixedSize(intArrayOf(1 , numChannel, numElements), OUTPUT_IMAGE_TYPE)
+        val output =
+            TensorBuffer.createFixedSize(intArrayOf(1, numChannel, numElements), OUTPUT_IMAGE_TYPE)
         interpreter?.run(imageBuffer, output.buffer)
 
 
-        val bestBoxes = bestBox(output.floatArray)
-        //inferenceTime = SystemClock.uptimeMillis() - inferenceTime
-
-
-        if (bestBoxes == null) {
-            detectorListener.onEmptyDetect()
-            return
-        }
-
-        detectorListener.onDetect(bestBoxes)
+        return bestBox(output.floatArray) ?: emptyList()
     }
 
     private fun bestBox(array: FloatArray) : List<BoundingBox>? {
@@ -176,11 +163,6 @@ class Detector(
         val box1Area = box1.w * box1.h
         val box2Area = box2.w * box2.h
         return intersectionArea / (box1Area + box2Area - intersectionArea)
-    }
-
-    interface DetectorListener {
-        fun onEmptyDetect()
-        fun onDetect(boundingBoxes: List<BoundingBox>)
     }
 
     companion object {

@@ -8,20 +8,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.engineerfred.finalyearproject.ui.DetectorScreen
+import com.engineerfred.finalyearproject.ui.screen.MainScreen
 import com.engineerfred.finalyearproject.ui.theme.FinalYearProjectTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             FinalYearProjectTheme {
-                //checkModelOutputShape(this, "best.tflite")
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    DetectorScreen(
+                    MainScreen(
                         modifier = Modifier.padding(innerPadding),
-                        applicationContext
                     )
                 }
             }

@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -86,4 +87,8 @@ dependencies {
     //splashScreen
     implementation(libs.androidx.core.splashscreen)
 
+    //hilt
+    implementation(libs.hilt.navigation.compose)
+    implementation(libs.dagger.hilt.android)
+    ksp(libs.dagger.hilt.compiler)
 }

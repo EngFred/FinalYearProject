@@ -41,14 +41,3 @@ fun getRealPathFromUri(context: Context, uri: Uri): String {
 }
 
 
-fun isValidIpAddress(ip: String): Boolean {
-    val parts = ip.split(".")
-    if (parts.size != 4) return false
-    return try {
-        parts.all { it.toInt() in 0..255 }
-    } catch (e: NumberFormatException) {
-        false
-    }
-}
-
-

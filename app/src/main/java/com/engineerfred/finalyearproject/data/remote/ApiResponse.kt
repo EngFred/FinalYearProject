@@ -1,4 +1,4 @@
-package com.engineerfred.finalyearproject.data.model
+package com.engineerfred.finalyearproject.data.remote
 
 import com.google.gson.annotations.SerializedName
 

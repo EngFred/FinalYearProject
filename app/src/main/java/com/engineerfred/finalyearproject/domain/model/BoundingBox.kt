@@ -1,4 +1,4 @@
-package com.engineerfred.finalyearproject.model
+package com.engineerfred.finalyearproject.domain.model
 
 data class BoundingBox(
     val x1: Float,

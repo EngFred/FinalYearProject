@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
-import com.engineerfred.finalyearproject.model.BoundingBox
+import com.engineerfred.finalyearproject.domain.model.BoundingBox
 
 @Composable
 fun ImageWithBoundingBoxes(bitmap: Bitmap, boundingBoxes: List<BoundingBox>) {
