@@ -1,5 +1,6 @@
 package com.engineerfred.finalyearproject.ui.screen
 
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
@@ -27,15 +28,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,11 +52,16 @@ import coil3.compose.AsyncImage
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.engineerfred.finalyearproject.R
+import com.engineerfred.finalyearproject.domain.model.DetectionMode
+import com.engineerfred.finalyearproject.ui.common.setStatusBarColors
 import com.engineerfred.finalyearproject.ui.components.CameraPreview
 import com.engineerfred.finalyearproject.ui.components.DetectionModeSelector
 import com.engineerfred.finalyearproject.ui.components.ImageWithBoundingBoxes
 import com.engineerfred.finalyearproject.ui.components.ScanningEffect
-import com.engineerfred.finalyearproject.domain.model.DetectionMode
+import com.engineerfred.finalyearproject.ui.theme.DarkGrayBlue
+import com.engineerfred.finalyearproject.ui.theme.LightTeal
+import com.engineerfred.finalyearproject.ui.theme.SmokyBlack
+import com.engineerfred.finalyearproject.ui.theme.White10
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -61,6 +72,18 @@ fun MainScreen(
 
     val context = LocalContext.current
     val uiState = viewModel.uiState.collectAsState().value
+
+    val view = LocalView.current
+    val window = (view.context as Activity).window
+
+
+    LaunchedEffect(uiState.showCamera) {
+        if( !uiState.showCamera ) {
+            setStatusBarColors(window, view)
+        } else {
+            setStatusBarColors(window, view, SmokyBlack, SmokyBlack)
+        }
+    }
 
     // Handle back press
     BackHandler(enabled = uiState.showCamera) {
@@ -95,6 +118,11 @@ fun MainScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf( DarkGrayBlue, LightTeal )
+                    )
+                )
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -102,10 +130,17 @@ fun MainScreen(
             //title
             Text(
                 text = "Bone Fracture Detection",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.primary
+                style = TextStyle(
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 22.sp,
+                    textAlign = TextAlign.Center,
+                    shadow = Shadow(
+                        color = Color.Black.copy(alpha = 0.5f),
+                        offset = Offset(2f, 2f),
+                        blurRadius = 4f
+                    ),
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -123,12 +158,22 @@ fun MainScreen(
                             galleryLauncher.launch("image/*")
                         }
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).height(57.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Icon(painterResource(R.drawable.ic_gallery), contentDescription = "Gallery", tint = Color.White)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Select from Gallery", color = Color.White)
+                    Text(
+                        "Select from Gallery",
+                        color = Color.White,
+                        style = TextStyle(
+                            shadow = Shadow(
+                                color = Color.Black.copy(alpha = 0.5f),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
+                            ),
+                        )
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -145,7 +190,7 @@ fun MainScreen(
                             }
                         }
                     },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).height(57.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
                     Icon(painterResource(R.drawable.ic_camera), contentDescription = "Camera", tint = Color.White)
@@ -159,13 +204,11 @@ fun MainScreen(
             //image to detect
             Card(
                 modifier = Modifier
-                    .fillMaxWidth().weight(1f)
-                    .shadow(8.dp, RoundedCornerShape(16.dp)),
+                    .fillMaxWidth().weight(1f),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF232323)
+                    containerColor = White10
                 ),
-                elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 when {
                     uiState.detectionMode == DetectionMode.Local && uiState.imageUri != null -> {
@@ -237,10 +280,17 @@ fun MainScreen(
                     Text(
                         text = message,
                         modifier = Modifier.fillMaxWidth(),
-                        color = color,
-                        textAlign = TextAlign.Center,
-                        fontSize = size,
-                        fontWeight = FontWeight.Bold
+                        style = TextStyle(
+                            textAlign = TextAlign.Center,
+                            fontSize = size,
+                            color = color,
+                            fontWeight = FontWeight.Bold,
+                            shadow = Shadow(
+                                color = Color.Black.copy(alpha = 0.5f),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
+                            ),
+                        )
                     )
                 }
             }

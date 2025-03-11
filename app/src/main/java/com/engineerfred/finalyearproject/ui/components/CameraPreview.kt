@@ -2,7 +2,6 @@ package com.engineerfred.finalyearproject.ui.components
 
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Rational
 import android.widget.Toast
@@ -59,7 +58,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.engineerfred.finalyearproject.R
-import com.engineerfred.finalyearproject.utils.toBitmap
 import java.io.File
 
 @Composable
@@ -145,7 +143,7 @@ fun CameraPreview(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             IconButton(onClick = onClose) {
-                Icon(Icons.Default.Close, contentDescription = "Close Camera")
+                Icon(Icons.Default.Close, contentDescription = "Close Camera", tint = Color.White)
             }
 
             Spacer(Modifier.width(8.dp))
