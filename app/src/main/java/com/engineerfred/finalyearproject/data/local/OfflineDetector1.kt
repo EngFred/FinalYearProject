@@ -13,6 +13,8 @@ import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import androidx.core.graphics.scale
 import com.engineerfred.finalyearproject.domain.model.BoundingBox
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class OfflineDetector @Inject constructor(
@@ -31,7 +33,7 @@ class OfflineDetector @Inject constructor(
         "humerus fracture",
         "humerus",
         "shoulder fracture",
-        "wrist positive"
+        "wrist positive",
     )
 
     private var tensorWidth = 0
@@ -66,26 +68,28 @@ class OfflineDetector @Inject constructor(
         }
     }
 
-    fun detect(frame: Bitmap) : List<BoundingBox> {
-        interpreter ?: return emptyList()
-        if (tensorWidth == 0) return emptyList()
-        if (tensorHeight == 0) return emptyList()
-        if (numChannel == 0) return emptyList()
-        if (numElements == 0) return emptyList()
+    suspend fun detect(frame: Bitmap) : List<BoundingBox> {
+        return withContext(Dispatchers.IO) {
+            interpreter ?: return@withContext emptyList()
+            if (tensorWidth == 0) return@withContext emptyList()
+            if (tensorHeight == 0) return@withContext emptyList()
+            if (numChannel == 0) return@withContext emptyList()
+            if (numElements == 0) return@withContext emptyList()
 
-        val resizedBitmap = frame.scale(tensorWidth, tensorHeight, false)
+            val resizedBitmap = frame.scale(tensorWidth, tensorHeight, false)
 
-        val tensorImage = TensorImage(DataType.FLOAT32)
-        tensorImage.load(resizedBitmap)
-        val processedImage = imageProcessor.process(tensorImage)
-        val imageBuffer = processedImage.buffer
+            val tensorImage = TensorImage(DataType.FLOAT32)
+            tensorImage.load(resizedBitmap)
+            val processedImage = imageProcessor.process(tensorImage)
+            val imageBuffer = processedImage.buffer
 
-        val output =
-            TensorBuffer.createFixedSize(intArrayOf(1, numChannel, numElements), OUTPUT_IMAGE_TYPE)
-        interpreter?.run(imageBuffer, output.buffer)
+            val output =
+                TensorBuffer.createFixedSize(intArrayOf(1, numChannel, numElements), OUTPUT_IMAGE_TYPE)
+            interpreter?.run(imageBuffer, output.buffer)
 
 
-        return bestBox(output.floatArray) ?: emptyList()
+            return@withContext bestBox(output.floatArray) ?: emptyList()
+        }
     }
 
     private fun bestBox(array: FloatArray) : List<BoundingBox>? {
@@ -104,8 +108,13 @@ class OfflineDetector @Inject constructor(
                 arrayIdx += numElements
             }
             if (maxConf > CONFIDENCE_THRESHOLD) {
-                val scaleFactor = 1.8F // Slightly increase box size by 10%
-                val clsName = labels[maxIdx]
+                var clsName: String
+                if (maxIdx >= 0 && maxIdx < labels.size) {
+                    clsName = labels[maxIdx]
+                } else {
+                    Log.e(TAG, "Invalid class index: $maxIdx, Max allowed: ${labels.size - 1}")
+                    continue // Skip this box if classification index is invalid
+                }
                 val cx = array[c] // 0
                 val cy = array[c + numElements] // 1
                 val w = array[c + numElements * 2]
@@ -166,13 +175,13 @@ class OfflineDetector @Inject constructor(
     }
 
     companion object {
-        private val TAG = "FracDetector"
+        private const val TAG = "FracDetector"
         private const val INPUT_MEAN = 0f
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-        private const val CONFIDENCE_THRESHOLD = 0.3F //2
+        private const val CONFIDENCE_THRESHOLD = 0.2F //2
         private const val IOU_THRESHOLD = 0.5F //3
-        private const val MODEL_PATH = "boneFrac.tflite"
+        private const val MODEL_PATH = "yolov8n-oob.tflite"
     }
 }
