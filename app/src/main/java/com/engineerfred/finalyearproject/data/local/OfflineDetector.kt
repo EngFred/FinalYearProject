@@ -15,10 +15,12 @@ import androidx.core.graphics.scale
 import com.engineerfred.finalyearproject.domain.model.BoundingBox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.PriorityQueue
 import javax.inject.Inject
 
-class OfflineDetector1 @Inject constructor(
-    private val context: Context
+class OfflineDetector @Inject constructor(
+    private val context: Context,
+    private val modelPath: String
 ) {
 
     init {
@@ -48,9 +50,9 @@ class OfflineDetector1 @Inject constructor(
 
     private fun setup() {
         try {
-            val model = FileUtil.loadMappedFile(context, MODEL_PATH)
+            val model = FileUtil.loadMappedFile(context, modelPath)
             val options = Interpreter.Options()
-            options.numThreads = 4
+            options.numThreads = Runtime.getRuntime().availableProcessors()
             interpreter = Interpreter(model, options)
 
             val inputShape = interpreter?.getInputTensor(0)?.shape() ?: return
@@ -61,7 +63,7 @@ class OfflineDetector1 @Inject constructor(
             numChannel = outputShape[1]
             numElements = outputShape[2]
 
-            Log.i(TAG, "Model loaded successfully!\n_________________________\nInput shape: $inputShape\nOutput shape: $outputShape\nTensor width: $tensorWidth\nTensor height: $tensorHeight\nNum channel: $numChannel\nNum Elements: $numElements")
+            Log.wtf(TAG, "Model loaded successfully!\n_________________________\nInput shape: $inputShape\nOutput shape: $outputShape\nTensor width: $tensorWidth\nTensor height: $tensorHeight\nNum channel: $numChannel\nNum Elements: $numElements")
 
         } catch (ex: Exception) {
             Log.e(TAG, "Error loading model: ${ex.message}")
@@ -69,26 +71,30 @@ class OfflineDetector1 @Inject constructor(
     }
 
     suspend fun detect(frame: Bitmap) : List<BoundingBox> {
-        return withContext(Dispatchers.IO) {
-            interpreter ?: return@withContext emptyList()
-            if (tensorWidth == 0) return@withContext emptyList()
-            if (tensorHeight == 0) return@withContext emptyList()
-            if (numChannel == 0) return@withContext emptyList()
-            if (numElements == 0) return@withContext emptyList()
+        return try {
+            withContext(Dispatchers.Default) {  // Use Default for CPU/GPU-bound tasks
+                if (interpreter == null || tensorWidth == 0 || tensorHeight == 0 || numChannel == 0 || numElements == 0) {
+                    return@withContext emptyList()
+                }
 
-            val resizedBitmap = frame.scale(tensorWidth, tensorHeight, false)
+                val resizedBitmap = frame.scale(tensorWidth, tensorHeight, false)
 
-            val tensorImage = TensorImage(DataType.FLOAT32)
-            tensorImage.load(resizedBitmap)
-            val processedImage = imageProcessor.process(tensorImage)
-            val imageBuffer = processedImage.buffer
+                val tensorImage = TensorImage(DataType.FLOAT32)
+                tensorImage.load(resizedBitmap)
+                val processedImage = imageProcessor.process(tensorImage)
+                val imageBuffer = processedImage.buffer
 
-            val output =
-                TensorBuffer.createFixedSize(intArrayOf(1, numChannel, numElements), OUTPUT_IMAGE_TYPE)
-            interpreter?.run(imageBuffer, output.buffer)
+                val output = TensorBuffer.createFixedSize(intArrayOf(1, numChannel, numElements),
+                    OUTPUT_IMAGE_TYPE
+                )
 
+                interpreter?.run(imageBuffer, output.buffer) ?: return@withContext emptyList()
 
-            return@withContext bestBox(output.floatArray) ?: emptyList()
+                return@withContext bestBox(output.floatArray) ?: emptyList()
+            }
+        }catch (ex: Exception) {
+            Log.wtf(TAG, "Error detecting: $ex")
+            return emptyList()
         }
     }
 
@@ -108,11 +114,16 @@ class OfflineDetector1 @Inject constructor(
                 arrayIdx += numElements
             }
             if (maxConf > CONFIDENCE_THRESHOLD) {
-                val clsName = labels[maxIdx]
+                var clsName: String
+                if (maxIdx >= 0 && maxIdx < labels.size) {
+                    clsName = labels[maxIdx]
+                } else {
+                    continue // Skip this box if classification index is invalid
+                }
                 val cx = array[c] // 0
                 val cy = array[c + numElements] // 1
                 val w = array[c + numElements * 2]
-                val h = array[c + numElements * 2]
+                val h = array[c + numElements * 3]
                 val x1 = cx - (w/2F)
                 val y1 = cy - (h/2F)
                 val x2 = cx + (w/2F)
@@ -136,22 +147,16 @@ class OfflineDetector1 @Inject constructor(
     }
 
     private fun applyNMS(boxes: List<BoundingBox>) : MutableList<BoundingBox> {
-        val sortedBoxes = boxes.sortedByDescending { it.cnf }.toMutableList()
+        val sortedBoxes = PriorityQueue(compareByDescending<BoundingBox> { it.cnf }).apply { addAll(boxes) }
         val selectedBoxes = mutableListOf<BoundingBox>()
 
-        while(sortedBoxes.isNotEmpty()) {
-            val first = sortedBoxes.first()
-            selectedBoxes.add(first)
-            sortedBoxes.remove(first)
+        while (sortedBoxes.isNotEmpty()) {
+            val best = sortedBoxes.poll() ?: continue
+            selectedBoxes.add(best)
 
-            val iterator = sortedBoxes.iterator()
-            while (iterator.hasNext()) {
-                val nextBox = iterator.next()
-                val iou = calculateIoU(first, nextBox)
-                if (iou >= IOU_THRESHOLD) {
-                    iterator.remove()
-                }
-            }
+            val filtered = sortedBoxes.filter { calculateIoU(best, it) < IOU_THRESHOLD }
+            sortedBoxes.clear()
+            sortedBoxes.addAll(filtered)
         }
 
         return selectedBoxes
@@ -169,13 +174,17 @@ class OfflineDetector1 @Inject constructor(
     }
 
     companion object {
-        private const val TAG = "FracDetector"
+        private const val TAG = "FracDetector2"
         private const val INPUT_MEAN = 0f
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
         private const val CONFIDENCE_THRESHOLD = 0.1F //2
         private const val IOU_THRESHOLD = 0.5F //3
-        private const val MODEL_PATH = "model1.tflite"
+    }
+
+    fun closeInterpreter() {
+        interpreter?.close()
+        interpreter = null
     }
 }

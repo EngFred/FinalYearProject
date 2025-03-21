@@ -1,10 +1,8 @@
-package com.engineerfred.finalyearproject.ui.screen
+package com.engineerfred.finalyearproject.ui.screen.home
 
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -25,21 +23,19 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -47,47 +43,32 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil3.compose.AsyncImage
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
 import com.engineerfred.finalyearproject.R
-import com.engineerfred.finalyearproject.domain.model.DetectionMode
-import com.engineerfred.finalyearproject.ui.common.setStatusBarColors
-import com.engineerfred.finalyearproject.ui.components.CameraPreview
+import com.engineerfred.finalyearproject.domain.model.Detector
 import com.engineerfred.finalyearproject.ui.components.DetectionModeSelector
 import com.engineerfred.finalyearproject.ui.components.ImageWithBoundingBoxes
-import com.engineerfred.finalyearproject.ui.components.ScanningEffect
 import com.engineerfred.finalyearproject.ui.theme.DarkGrayBlue
-import com.engineerfred.finalyearproject.ui.theme.LightTeal
-import com.engineerfred.finalyearproject.ui.theme.SmokyBlack
 import com.engineerfred.finalyearproject.ui.theme.White10
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun MainScreen(
+fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: AppViewModel = hiltViewModel()
+    viewModel: AppViewModel = hiltViewModel(),
+    onCaptureImage: () -> Unit,
+    capturedImageUrl:  String?,
+    detectionModel: Detector?,
+    onModelSelected: (Detector) -> Unit,
 ) {
 
     val context = LocalContext.current
     val uiState = viewModel.uiState.collectAsState().value
 
-    val view = LocalView.current
-    val window = (view.context as Activity).window
-
-
-    LaunchedEffect(uiState.showCamera) {
-        if( !uiState.showCamera ) {
-            setStatusBarColors(window, view)
-        } else {
-            setStatusBarColors(window, view, SmokyBlack, SmokyBlack)
+    LaunchedEffect(capturedImageUrl) {
+        capturedImageUrl?.let {
+            viewModel.onEvent(AppUiEvents.SelectedImage(context, it.toUri()))
         }
-    }
-
-    // Handle back press
-    BackHandler(enabled = uiState.showCamera) {
-        viewModel.onEvent(AppUiEvents.ToggledCameraVisibility(false))
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -98,43 +79,28 @@ fun MainScreen(
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
-            viewModel.onEvent(AppUiEvents.ToggledCameraVisibility(true))
+            onCaptureImage()
         } else {
             Toast.makeText(context, "Camera permission required", Toast.LENGTH_SHORT).show()
         }
     }
 
-    if (uiState.showCamera) {
-        CameraPreview(
-            modifier = modifier.fillMaxSize(),
-            onImageCaptured = {
-                viewModel.onEvent(AppUiEvents.SelectedImage(context, it))
-            },
-            onClose = {
-                viewModel.onEvent(AppUiEvents.ToggledCameraVisibility(false))
-            }
-        )
-    } else {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf( DarkGrayBlue, LightTeal )
-                    )
-                )
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    Column(
+        modifier = modifier
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().background(DarkGrayBlue).height(60.dp).padding(start = 18.dp, end = 8.dp, top = 16.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-
-            //title
             Text(
-                text = "Bone Fracture Detection",
+                text = "FracDetect",
+                modifier = Modifier.weight(1f).padding(end = 4.dp),
                 style = TextStyle(
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
-                    textAlign = TextAlign.Center,
                     shadow = Shadow(
                         color = Color.Black.copy(alpha = 0.5f),
                         offset = Offset(2f, 2f),
@@ -143,8 +109,20 @@ fun MainScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            androidx.compose.animation.AnimatedVisibility(visible = uiState.imageUri != null && uiState.isDetecting.not() && uiState.boundingBoxes.isNotEmpty()) {
+                IconButton(onClick = { Toast.makeText(context, "To be implemented soon!", Toast.LENGTH_SHORT).show() }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_download),
+                        contentDescription = "download button"
+                    )
+                }
+            }
+        }
 
+        Spacer(modifier = Modifier.height(5.dp))
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
             //button rows
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -158,7 +136,9 @@ fun MainScreen(
                             galleryLauncher.launch("image/*")
                         }
                     },
-                    modifier = Modifier.weight(1f).height(57.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(57.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Icon(painterResource(R.drawable.ic_gallery), contentDescription = "Gallery", tint = Color.White)
@@ -180,17 +160,15 @@ fun MainScreen(
 
                 Button(
                     onClick = {
-                        if ( uiState.isDetecting ) {
-                            Toast.makeText(context, "Please wait!", Toast.LENGTH_SHORT).show()
+                        if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                            onCaptureImage()
                         } else {
-                            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                                viewModel.onEvent(AppUiEvents.ToggledCameraVisibility(true))
-                            } else {
-                                cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
-                            }
+                            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
                         }
                     },
-                    modifier = Modifier.weight(1f).height(57.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(57.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
                     Icon(painterResource(R.drawable.ic_camera), contentDescription = "Camera", tint = Color.White)
@@ -204,14 +182,15 @@ fun MainScreen(
             //image to detect
             Card(
                 modifier = Modifier
-                    .fillMaxWidth().weight(1f),
+                    .fillMaxWidth()
+                    .weight(1f),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = White10
                 ),
             ) {
                 when {
-                    uiState.detectionMode == DetectionMode.Local && uiState.imageUri != null -> {
+                    uiState.imageUri != null -> {
                         if ( uiState.imageBitmap != null) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
@@ -220,70 +199,37 @@ fun MainScreen(
                                 ImageWithBoundingBoxes(uiState.imageBitmap, uiState.boundingBoxes)
                             }
                         }
+                    }else -> {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .padding(horizontal = 24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Detection Results will be shown here!",
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color.LightGray
+                        )
                     }
-                    uiState.detectionMode == DetectionMode.Remote && uiState.imageUri != null -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .weight(1f)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.LightGray.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            GlideImage(
-                                model = uiState.imageUri,
-                                contentDescription = "Predicted Image",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Fit
-                            )
-                            if (uiState.isDetecting) {
-                                ScanningEffect()
-                            }
-                        }
-                    }
-
-                    uiState.detectionMode == null -> {
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                                .padding(horizontal = 24.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            if ( uiState.imageUri == null ) {
-                                Text(
-                                    "Detection Results will be shown here!",
-                                    textAlign = TextAlign.Center,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
-                                    color = Color.LightGray
-                                )
-                            } else {
-                                AsyncImage(
-                                    model = uiState.imageUri,
-                                    contentDescription = "Selected Image",
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                        }
-                    }
+                }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
             AnimatedVisibility(visible = uiState.feedbackMessage != null) {
                 uiState.feedbackMessage?.let { message ->
                     Spacer(modifier = Modifier.height(16.dp))
-                    val color = if( message.contains("Detection Completed!") || message.contains("No fracture detected!") ) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                    val size = if( message.contains("Detection Completed!") || message.contains("No fracture detected!") ) 21.sp else 17.sp
                     Text(
                         text = message,
                         modifier = Modifier.fillMaxWidth(),
                         style = TextStyle(
                             textAlign = TextAlign.Center,
-                            fontSize = size,
-                            color = color,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             shadow = Shadow(
                                 color = Color.Black.copy(alpha = 0.5f),
@@ -295,19 +241,37 @@ fun MainScreen(
                 }
             }
 
+            AnimatedVisibility(visible = uiState.feedbackMessage == null && uiState.boundingBoxes.isNotEmpty() && uiState.isDetecting.not()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Detection complete! If your not contented with the results, try again with another model.",
+                    modifier = Modifier.fillMaxWidth(),
+                    style = TextStyle(
+                        textAlign = TextAlign.Center,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        shadow = Shadow(
+                            color = Color.Black.copy(alpha = 0.5f),
+                            offset = Offset(2f, 2f),
+                            blurRadius = 4f
+                        ),
+                    )
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             AnimatedVisibility(visible = uiState.imageUri != null ) {
                 DetectionModeSelector(
-                    onLocalDetect = { detector ->
+                    isDetecting = uiState.isDetecting,
+                    onDetect = { detector ->
                         uiState.imageBitmap?.let {
-                            viewModel.onEvent(AppUiEvents.DetectedLocally(detector))
+                            onModelSelected.invoke(detector)
+                            viewModel.onEvent(AppUiEvents.DetectClicked(detector, context))
                         }
                     },
-                    onRemoteDetect = {
-                        Toast.makeText(context, "Detecting...", Toast.LENGTH_SHORT).show()
-                        viewModel.onEvent(AppUiEvents.DetectedRemotely(context))
-                    },
+                    detectionModel = detectionModel,
                     enabled = uiState.isDetecting.not()
                 )
             }

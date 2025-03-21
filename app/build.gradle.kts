@@ -76,18 +76,12 @@ dependencies {
 
     //coil OR glide for image loading
     implementation(libs.coil.compose)
-    implementation(libs.glide.compose)
-
-    //retrofit
-    implementation(libs.retrofit)
-    implementation(libs.okhttp)
-    implementation(libs.converter.gson)
-    implementation(libs.logging.interceptor)
 
     //splashScreen
     implementation(libs.androidx.core.splashscreen)
 
     //hilt
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.dagger.hilt.android)
     ksp(libs.dagger.hilt.compiler)

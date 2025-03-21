@@ -1,5 +1,4 @@
-package com.engineerfred.finalyearproject.ui.components
-
+package com.engineerfred.finalyearproject.ui.screen.camera
 
 import android.content.Context
 import android.net.Uri
@@ -56,19 +55,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.engineerfred.finalyearproject.R
 import java.io.File
 
 @Composable
-fun CameraPreview(
+fun CameraScreen(
     modifier: Modifier = Modifier,
-    onImageCaptured: (Uri) -> Unit,
-    onClose: () -> Unit,
+    onCaptureComplete: (String) -> Unit,
+    onBack: () -> Unit
 ) {
-    val previewUseCase = remember { Preview.Builder().build() }
+
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+
+    val previewUseCase = remember { Preview.Builder().build() }
+//    val lifecycleOwner = LocalLifecycleOwner.current
 
     var cameraProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
@@ -142,7 +142,7 @@ fun CameraPreview(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = onClose) {
+            IconButton(onClick = { onBack() }) {
                 Icon(Icons.Default.Close, contentDescription = "Close Camera", tint = Color.White)
             }
 
@@ -218,27 +218,13 @@ fun CameraPreview(
             ) {
                 IconButton(
                     onClick = {
-                        isCapturing = true
-                        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(
-                            File(context.externalCacheDir, "image.jpg")
-                        ).build()
-                        val callback = object : ImageCapture.OnImageSavedCallback {
-                            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                                outputFileResults.savedUri?.let {
-                                    onImageCaptured(it)
-                                }
-                                isCapturing = false
-                            }
-
-                            override fun onError(exception: ImageCaptureException) {
-                                isCapturing = false
-                                Toast.makeText(context, "Unable to take photo!", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                        imageCaptureUseCase.takePicture(
-                            outputFileOptions,
-                            ContextCompat.getMainExecutor(context),
-                            callback
+                        startCamera(
+                            onCaptureComplete = {
+                                onCaptureComplete(it)
+                            },
+                            context = context,
+                            imageCaptureUseCase = imageCaptureUseCase,
+                            onUpdateCaptureStatus = { isCapturing = it }
                         )
                     },
                     modifier = Modifier.size(64.dp),
@@ -294,3 +280,36 @@ fun updateAspectRatio(imageCaptureUseCase: ImageCapture, selectedAspectRatio: St
     }
 }
 
+fun startCamera(
+    onUpdateCaptureStatus: (Boolean) -> Unit,
+    context: Context,
+    onCaptureComplete: (String) -> Unit,
+    imageCaptureUseCase: ImageCapture
+) {
+
+    onUpdateCaptureStatus(true)
+
+    val outputFileOptions = ImageCapture.OutputFileOptions.Builder(
+        File(context.externalCacheDir, "image.jpg")
+    ).build()
+    val callback = object : ImageCapture.OnImageSavedCallback {
+        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+            outputFileResults.savedUri?.let {
+                val encodedImageUrl = Uri.encode(it.toString())
+                onCaptureComplete(encodedImageUrl)
+            } ?: Toast.makeText(context, "Unable to save photo!", Toast.LENGTH_SHORT).show()
+            onUpdateCaptureStatus(false)
+        }
+
+        override fun onError(exception: ImageCaptureException) {
+            onUpdateCaptureStatus(false)
+            Toast.makeText(context, "Unable to take photo!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    imageCaptureUseCase.takePicture(
+        outputFileOptions,
+        ContextCompat.getMainExecutor(context),
+        callback
+    )
+}

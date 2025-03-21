@@ -5,10 +5,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -32,75 +32,59 @@ fun ImageWithBoundingBoxes(bitmap: Bitmap, boundingBoxes: List<BoundingBox>) {
             modifier = Modifier.matchParentSize()
         )
 
-        boundingBoxes.forEach { box ->
-            DrawBoundingBox(box, bitmap)
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+            val scaleX = canvasWidth / bitmap.width.toFloat()
+            val scaleY = canvasHeight / bitmap.height.toFloat()
+
+            boundingBoxes.forEach { box ->
+                val x1 = box.x1 * bitmap.width * scaleX
+                val y1 = box.y1 * bitmap.height * scaleY
+                val x2 = box.x2 * bitmap.width * scaleX
+                val y2 = box.y2 * bitmap.height * scaleY
+
+                val confidence = when {
+                    box.cnf < 0.5f -> box.cnf + 0.4f
+                    box.cnf < 0.85f -> box.cnf + 0.3f
+                    else -> box.cnf
+                }.coerceAtMost(1f)
+
+                val labelText = "fracture: ${(confidence * 100).toInt()}%"
+
+                // Draw bounding box
+                drawRect(
+                    color = Color(0xFF8ECB1F), // Greenish color
+                    topLeft = Offset(x1, y1),
+                    size = Size(x2 - x1, y2 - y1),
+                    style = Stroke(width = 4f)
+                )
+
+                val textPaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.BLACK
+                    textSize = 24f
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    isAntiAlias = true
+                }
+                val textWidth = textPaint.measureText(labelText)
+                val textHeight = textPaint.fontMetrics.run { bottom - top }
+
+                // Draw label background
+                drawRoundRect(
+                    color = Color(0xFF8ECB1F), // Semi-transparent black for better contrast
+                    topLeft = Offset(x1 - 5, y1 - textHeight - 10),
+                    size = Size(textWidth + 20, textHeight + 10),
+                    cornerRadius = CornerRadius(8f, 8f)
+                )
+
+                // Draw label text
+                drawContext.canvas.nativeCanvas.drawText(
+                    labelText,
+                    x1 + 10,
+                    y1 - 10,
+                    textPaint
+                )
+            }
         }
-    }
-}
-
-@Composable
-fun DrawBoundingBox(box: BoundingBox, bitmap: Bitmap) {
-    val imageWidth = bitmap.width.toFloat()
-    val imageHeight = bitmap.height.toFloat()
-
-    val x1 = box.x1 * imageWidth
-    val y1 = box.y1 * imageHeight
-    val x2 = box.x2 * imageWidth
-    val y2 = box.y2 * imageHeight
-
-//    val labelText = "${box.clsName}: ${(box.cnf * 100).toInt()}%"
-    var confidence = if (box.cnf < 0.5f) box.cnf + 0.4f
-    else if (box.cnf < 0.85f) box.cnf + 0.3f
-    else box.cnf
-
-    confidence = if (confidence > 1f) 1f else if (confidence == 1f) confidence - 0.05f else confidence
-
-    //val labelText = "fracture: ${(box.cnf * 100).toInt()}%"
-    val labelText = "fracture: ${(confidence * 100).toInt()}%"
-
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val canvasWidth = size.width
-        val canvasHeight = size.height
-
-        // Scale the bounding box coordinates to the actual displayed image size
-        val scaleX = canvasWidth / imageWidth
-        val scaleY = canvasHeight / imageHeight
-
-        val adjX1 = x1 * scaleX
-        val adjY1 = y1 * scaleY
-        val adjX2 = x2 * scaleX
-        val adjY2 = y2 * scaleY
-
-        // Draw bounding box (Cyan)
-        drawRect(
-            color = Color(0xFF8ECB1F),
-            topLeft = Offset(adjX1, adjY1),
-            size = Size(adjX2 - adjX1, adjY2 - adjY1),
-            style = Stroke(width = 4f)
-        )
-
-        // Measure text width
-        val textPaint = android.graphics.Paint().apply {
-            color = android.graphics.Color.BLACK
-            textSize = 24f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-        }
-        val textWidth = textPaint.measureText(labelText)
-        val textHeight = textPaint.fontMetrics.run { bottom - top }
-
-        // Draw label background (Cyan) - starts exactly at the bounding box
-        drawRoundRect(
-            color = Color(0xFF8ECB1F),
-            topLeft = Offset(adjX1 - 3, adjY1 - textHeight - 10),
-            size = Size(textWidth + 20, textHeight + 10),
-        )
-
-        // Draw label text
-        drawContext.canvas.nativeCanvas.drawText(
-            labelText,
-            adjX1 + 10,
-            adjY1 - 10,
-            textPaint
-        )
     }
 }
