@@ -3,10 +3,8 @@ package com.engineerfred.finalyearproject.ui.components
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,11 +30,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.engineerfred.finalyearproject.domain.model.Detector
 import com.engineerfred.finalyearproject.ui.theme.LightTeal
 
 @Composable
 fun DetectionModeSelector(
-    onLocalDetect: () -> Unit,
+    onLocalDetect: (Detector) -> Unit,
     onRemoteDetect: () -> Unit,
     enabled: Boolean = true
 ) {
@@ -80,11 +79,11 @@ fun DetectionModeSelector(
             ) {
                 Column{
                     Text(
-                        text = "Detect Locally",
+                        text = "Detect Locally::Model1",
                         modifier = Modifier.
                         clickable {
                                 expanded = false
-                                onLocalDetect()
+                                onLocalDetect(Detector.DETECTOR_1)
                             }.
                         fillMaxWidth().padding(8.dp),
                         style = TextStyle(
@@ -101,15 +100,15 @@ fun DetectionModeSelector(
                     )
                     HorizontalDivider()
                     Text(
-                        text = "Detect Remotely (Internet Required)",
-                        modifier = Modifier
-                            .clickable {
-                                expanded = false
-                                onRemoteDetect()
-                            }.fillMaxWidth()
-                            .padding(8.dp),
+                        text = "Detect Locally::Model2",
+                        modifier = Modifier.
+                        clickable {
+                            expanded = false
+                            onLocalDetect(Detector.DETECTOR_2)
+                        }.
+                        fillMaxWidth().padding(8.dp),
                         style = TextStyle(
-                            color = Color.Cyan,
+                            color = Color.White,
                             fontWeight = FontWeight.Medium,
                             fontSize = 18.sp,
                             letterSpacing = 0.5.sp,
@@ -120,6 +119,48 @@ fun DetectionModeSelector(
                             ),
                         )
                     )
+                    HorizontalDivider()
+                    Text(
+                        text = "Detect Locally::Model3",
+                        modifier = Modifier.
+                        clickable {
+                            expanded = false
+                            onLocalDetect(Detector.DETECTOR_3)
+                        }.
+                        fillMaxWidth().padding(8.dp),
+                        style = TextStyle(
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 18.sp,
+                            letterSpacing = 0.5.sp,
+                            shadow = Shadow(
+                                color = Color.Black.copy(alpha = 0.5f),
+                                offset = Offset(2f, 2f),
+                                blurRadius = 4f
+                            ),
+                        )
+                    )
+//                    HorizontalDivider()
+//                    Text(
+//                        text = "Detect Remotely (Internet Required)",
+//                        modifier = Modifier
+//                            .clickable {
+//                                expanded = false
+//                                onRemoteDetect()
+//                            }.fillMaxWidth()
+//                            .padding(8.dp),
+//                        style = TextStyle(
+//                            color = Color.Cyan,
+//                            fontWeight = FontWeight.Medium,
+//                            fontSize = 18.sp,
+//                            letterSpacing = 0.5.sp,
+//                            shadow = Shadow(
+//                                color = Color.Black.copy(alpha = 0.5f),
+//                                offset = Offset(2f, 2f),
+//                                blurRadius = 4f
+//                            ),
+//                        )
+//                    )
                 }
             }
         }

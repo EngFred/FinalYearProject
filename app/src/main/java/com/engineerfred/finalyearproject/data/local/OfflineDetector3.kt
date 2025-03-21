@@ -61,7 +61,7 @@ class OfflineDetector3 @Inject constructor(
             numChannel = outputShape[1]
             numElements = outputShape[2]
 
-            Log.i(TAG, "Model loaded successfully!\n_________________________\nInput shape: $inputShape\nOutput shape: $outputShape\nTensor width: $tensorWidth\nTensor height: $tensorHeight\nNum channel: $numChannel\nNum Elements: $numElements")
+            Log.v(TAG, "Model loaded successfully!\n_________________________\nInput shape: $inputShape\nOutput shape: $outputShape\nTensor width: $tensorWidth\nTensor height: $tensorHeight\nNum channel: $numChannel\nNum Elements: $numElements")
 
         } catch (ex: Exception) {
             Log.e(TAG, "Error loading model: ${ex.message}")
@@ -174,8 +174,8 @@ class OfflineDetector3 @Inject constructor(
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-        private const val CONFIDENCE_THRESHOLD = 0.3F //2
+        private const val CONFIDENCE_THRESHOLD = 0.1F //2
         private const val IOU_THRESHOLD = 0.5F //3
-        private const val MODEL_PATH = "boneFrac.tflite"
+        private const val MODEL_PATH = "model3.tflite" //best 2
     }
 }

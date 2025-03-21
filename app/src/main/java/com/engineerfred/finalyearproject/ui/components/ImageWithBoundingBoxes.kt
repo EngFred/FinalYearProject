@@ -48,7 +48,15 @@ fun DrawBoundingBox(box: BoundingBox, bitmap: Bitmap) {
     val x2 = box.x2 * imageWidth
     val y2 = box.y2 * imageHeight
 
-    val labelText = "${box.clsName}: ${(box.cnf * 100).toInt()}%" // Confidence percentage
+//    val labelText = "${box.clsName}: ${(box.cnf * 100).toInt()}%"
+    var confidence = if (box.cnf < 0.5f) box.cnf + 0.4f
+    else if (box.cnf < 0.85f) box.cnf + 0.3f
+    else box.cnf
+
+    confidence = if (confidence > 1f) 1f else if (confidence == 1f) confidence - 0.05f else confidence
+
+    //val labelText = "fracture: ${(box.cnf * 100).toInt()}%"
+    val labelText = "fracture: ${(confidence * 100).toInt()}%"
 
     Canvas(modifier = Modifier.fillMaxSize()) {
         val canvasWidth = size.width

@@ -9,6 +9,7 @@ import com.engineerfred.finalyearproject.domain.usecases.DetectOfflineUseCase
 import com.engineerfred.finalyearproject.domain.usecases.DetectOnlineUseCase
 import com.engineerfred.finalyearproject.core.resource.Resource
 import com.engineerfred.finalyearproject.domain.model.DetectionMode
+import com.engineerfred.finalyearproject.domain.model.Detector
 import com.engineerfred.finalyearproject.utils.prepareFilePart
 import com.engineerfred.finalyearproject.utils.toBitmap
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,8 +31,8 @@ class AppViewModel @Inject constructor(
 
     fun onEvent(event: AppUiEvents) {
         when(event) {
-            AppUiEvents.DetectedLocally -> {
-                detectOffline()
+            is AppUiEvents.DetectedLocally -> {
+                detectOffline(event.detector)
             }
             is AppUiEvents.DetectedRemotely -> {
                 detectOnline(event.context)
@@ -68,7 +69,7 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    private fun detectOffline() {
+    private fun detectOffline(detector: Detector) {
 
         if ( _uiState.value.imageBitmap == null ) {
             _uiState.update {
@@ -79,14 +80,16 @@ class AppViewModel @Inject constructor(
             return
         }
 
-        val boundingBoxes = detectOfflineUseCase(_uiState.value.imageBitmap!!)
-        _uiState.update {
-            it.copy(
-                boundingBoxes = boundingBoxes,
-                detectionMode = DetectionMode.Local,
-                showCamera = false,
-                feedbackMessage = if ( boundingBoxes.isEmpty() ) "No fracture detected!" else null,
-            )
+        viewModelScope.launch {
+            val boundingBoxes = detectOfflineUseCase(detector, _uiState.value.imageBitmap!!)
+            _uiState.update {
+                it.copy(
+                    boundingBoxes = boundingBoxes,
+                    detectionMode = DetectionMode.Local,
+                    showCamera = false,
+                    feedbackMessage = if ( boundingBoxes.isEmpty() ) "No fracture detected!" else null,
+                )
+            }
         }
     }
 

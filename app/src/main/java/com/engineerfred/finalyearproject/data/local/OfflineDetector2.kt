@@ -61,7 +61,7 @@ class OfflineDetector2 @Inject constructor(
             numChannel = outputShape[1]
             numElements = outputShape[2]
 
-            Log.i(TAG, "Model loaded successfully!\n_________________________\nInput shape: $inputShape\nOutput shape: $outputShape\nTensor width: $tensorWidth\nTensor height: $tensorHeight\nNum channel: $numChannel\nNum Elements: $numElements")
+            Log.wtf(TAG, "Model loaded successfully!\n_________________________\nInput shape: $inputShape\nOutput shape: $outputShape\nTensor width: $tensorWidth\nTensor height: $tensorHeight\nNum channel: $numChannel\nNum Elements: $numElements")
 
         } catch (ex: Exception) {
             Log.e(TAG, "Error loading model: ${ex.message}")
@@ -112,7 +112,6 @@ class OfflineDetector2 @Inject constructor(
                 if (maxIdx >= 0 && maxIdx < labels.size) {
                     clsName = labels[maxIdx]
                 } else {
-                    Log.e(TAG, "Invalid class index: $maxIdx, Max allowed: ${labels.size - 1}")
                     continue // Skip this box if classification index is invalid
                 }
                 val cx = array[c] // 0
@@ -175,13 +174,13 @@ class OfflineDetector2 @Inject constructor(
     }
 
     companion object {
-        private const val TAG = "FracDetector"
+        private const val TAG = "FracDetector2"
         private const val INPUT_MEAN = 0f
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-        private const val CONFIDENCE_THRESHOLD = 0.2F //2
+        private const val CONFIDENCE_THRESHOLD = 0.1F //2
         private const val IOU_THRESHOLD = 0.5F //3
-        private const val MODEL_PATH = "yolov8n-oob.tflite"
+        private const val MODEL_PATH = "model2.tflite"
     }
 }

@@ -4,7 +4,9 @@ import android.content.Context
 import com.engineerfred.finalyearproject.data.remote.ApiConstants
 import com.engineerfred.finalyearproject.data.remote.ApiService
 import com.engineerfred.finalyearproject.data.repo.AppRepositoryImpl
-import com.engineerfred.finalyearproject.data.local.OfflineDetector
+import com.engineerfred.finalyearproject.data.local.OfflineDetector1
+import com.engineerfred.finalyearproject.data.local.OfflineDetector2
+import com.engineerfred.finalyearproject.data.local.OfflineDetector3
 import com.engineerfred.finalyearproject.domain.repo.AppRepository
 import dagger.Module
 import dagger.Provides
@@ -48,14 +50,30 @@ object AppModule {
     @Singleton
     fun providesAppRepository(
         apiService: ApiService,
-        detector: OfflineDetector
-    ): AppRepository = AppRepositoryImpl(apiService, detector)
+        detector1: OfflineDetector1,
+        detector2: OfflineDetector2,
+        detector3: OfflineDetector3
+    ): AppRepository = AppRepositoryImpl(apiService, detector1, detector2, detector3)
 
     @Provides
     @Singleton
-    fun providesOfflineDetector(
+    fun providesOfflineDetector1(
         @ApplicationContext
         context: Context
-    ): OfflineDetector = OfflineDetector(context)
+    ): OfflineDetector1 = OfflineDetector1(context)
+
+    @Provides
+    @Singleton
+    fun providesOfflineDetector2(
+        @ApplicationContext
+        context: Context
+    ): OfflineDetector2 = OfflineDetector2(context)
+
+    @Provides
+    @Singleton
+    fun providesOfflineDetector3(
+        @ApplicationContext
+        context: Context
+    ): OfflineDetector3 = OfflineDetector3(context)
 
 }

@@ -299,10 +299,9 @@ fun MainScreen(
 
             AnimatedVisibility(visible = uiState.imageUri != null ) {
                 DetectionModeSelector(
-                    onLocalDetect = {
-                        Toast.makeText(context, "Detecting...", Toast.LENGTH_SHORT).show()
+                    onLocalDetect = { detector ->
                         uiState.imageBitmap?.let {
-                            viewModel.onEvent(AppUiEvents.DetectedLocally)
+                            viewModel.onEvent(AppUiEvents.DetectedLocally(detector))
                         }
                     },
                     onRemoteDetect = {

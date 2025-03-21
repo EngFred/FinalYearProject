@@ -17,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
-class OfflineDetector @Inject constructor(
+class OfflineDetector1 @Inject constructor(
     private val context: Context
 ) {
 
@@ -108,13 +108,7 @@ class OfflineDetector @Inject constructor(
                 arrayIdx += numElements
             }
             if (maxConf > CONFIDENCE_THRESHOLD) {
-                var clsName: String
-                if (maxIdx >= 0 && maxIdx < labels.size) {
-                    clsName = labels[maxIdx]
-                } else {
-                    Log.e(TAG, "Invalid class index: $maxIdx, Max allowed: ${labels.size - 1}")
-                    continue // Skip this box if classification index is invalid
-                }
+                val clsName = labels[maxIdx]
                 val cx = array[c] // 0
                 val cy = array[c + numElements] // 1
                 val w = array[c + numElements * 2]
@@ -180,8 +174,8 @@ class OfflineDetector @Inject constructor(
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-        private const val CONFIDENCE_THRESHOLD = 0.2F //2
+        private const val CONFIDENCE_THRESHOLD = 0.1F //2
         private const val IOU_THRESHOLD = 0.5F //3
-        private const val MODEL_PATH = "yolov8n-oob.tflite"
+        private const val MODEL_PATH = "model1.tflite"
     }
 }
