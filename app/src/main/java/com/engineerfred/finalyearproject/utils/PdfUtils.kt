@@ -28,121 +28,128 @@ object PdfUtils {
 
     suspend fun generateMedicalReport(context: Context, username: String, boundingBoxes: List<BoundingBox>, originalBitmap: Bitmap) {
         withContext(Dispatchers.IO) {
-            val document = PdfDocument()
-            val normalPaint = Paint().apply {
-                textSize = 22f
-                isAntiAlias = true
-            }
-            val sectionsBoldPaint = Paint(normalPaint).apply {
-                typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
-            }
-
-            val titleBoldPaint = Paint(normalPaint).apply {
-                typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
-                textSize = 27f
-            }
-
-            var pageNumber = 1
-            var yPos = 50f
-            var currentPage = createNewPage(document, pageNumber)
-            val canvas = currentPage.canvas
-            val pageHeight = currentPage.info.pageHeight
-            val margin = 50f
-
-            // Title
-            canvas.drawText("🏥 Bone Fracture Detection Report", margin, yPos, titleBoldPaint)
-            yPos += 50f
-
-            // Patient Info
-            canvas.drawText("\uD83D\uDC64 User: ${username.replaceFirstChar { it.uppercase() }}", margin, yPos, normalPaint)
-            yPos += 40f
-            canvas.drawText("\uD83D\uDCC5 Date: ${SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())}", margin, yPos, normalPaint)
-            yPos += 40f
-
-            // Image
-            val annotatedBitmap = createBitmapWithBoundingBoxes(originalBitmap, boundingBoxes)
-            val scaledBitmap = annotatedBitmap.scale(500, 400)
-
-            if (yPos + scaledBitmap.height > pageHeight - 100) {
-                // Create a new page if image won't fit
-                document.finishPage(currentPage)
-                pageNumber++
-                currentPage = createNewPage(document, pageNumber)
-                yPos = 50f
-            }
-
-            canvas.drawBitmap(scaledBitmap, margin, yPos, normalPaint)
-            yPos += scaledBitmap.height + 20f
-            yPos += 40f
-
-            // Detection Results
-            canvas.drawText("\uD83E\uDE7B Detection Summary:", margin, yPos, sectionsBoldPaint)
-            yPos += 30f
-
-            if (boundingBoxes.isEmpty()) {
-                canvas.drawText("No fractures detected.", margin, yPos, normalPaint)
-                yPos += 30f
-            } else {
-                boundingBoxes.forEachIndexed { index, box ->
-                    val confidence = when {
-                        box.cnf < 0.5f -> box.cnf + 0.4f
-                        box.cnf < 0.85f -> box.cnf + 0.3f
-                        else -> box.cnf
-                    }.coerceAtMost(1f)
-
-                    val resultText = "${index + 1}• ${box.clsName} - Confidence: ${(confidence * 100).toInt()}%"
-
-                    if (yPos + 25f > pageHeight - 100) {
-                        document.finishPage(currentPage)
-                        pageNumber++
-                        currentPage = createNewPage(document, pageNumber)
-                        yPos = 50f
-                    }
-
-                    currentPage.canvas.drawText(resultText, margin, yPos, normalPaint)
-                    yPos += 25f
+            try {
+                val document = PdfDocument()
+                val normalPaint = Paint().apply {
+                    textSize = 22f
+                    isAntiAlias = true
                 }
-            }
+                val sectionsBoldPaint = Paint(normalPaint).apply {
+                    typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
+                }
 
-            yPos += 30f
+                val titleBoldPaint = Paint(normalPaint).apply {
+                    typeface = Typeface.create(Typeface.DEFAULT_BOLD, Typeface.BOLD)
+                    textSize = 27f
+                }
 
-            // Medical Comment
-            canvas.drawText("\uD83D\uDCDD Medical Comment:", margin, yPos, sectionsBoldPaint)
-            yPos += 10f
-            val medicalComment = "These findings suggest potential fractures. Further clinical evaluation is recommended."
+                var pageNumber = 1
+                var yPos = 50f
+                var currentPage = createNewPage(document, pageNumber)
+                val canvas = currentPage.canvas
+                val pageHeight = currentPage.info.pageHeight
+                val margin = 50f
 
-            val commentLines = splitTextIntoLines(medicalComment, normalPaint, 500f)
-            for (line in commentLines) {
-                if (yPos + normalPaint.textSize > pageHeight - 100) {
+                // Title
+                canvas.drawText("🏥 Bone Fracture Detection Report", margin, yPos, titleBoldPaint)
+                yPos += 50f
+
+                // Patient Info
+                canvas.drawText("\uD83D\uDC64 User: ${username.replaceFirstChar { it.uppercase() }}", margin, yPos, normalPaint)
+                yPos += 40f
+                canvas.drawText("\uD83D\uDCC5 Date: ${SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault()).format(Date())}", margin, yPos, normalPaint)
+                yPos += 40f
+
+                // Image
+                val annotatedBitmap = createBitmapWithBoundingBoxes(originalBitmap, boundingBoxes)
+                val scaledBitmap = annotatedBitmap.scale(500, 400)
+
+                if (yPos + scaledBitmap.height > pageHeight - 100) {
+                    // Create a new page if image won't fit
                     document.finishPage(currentPage)
                     pageNumber++
                     currentPage = createNewPage(document, pageNumber)
                     yPos = 50f
                 }
-                currentPage.canvas.drawText(line, margin, yPos, normalPaint)
-                yPos += normalPaint.textSize + 5
-            }
 
-            // Footer
-            if (yPos + 50 > pageHeight - 50) {
-                document.finishPage(currentPage)
-                pageNumber++
-                currentPage = createNewPage(document, pageNumber)
-                yPos = pageHeight - 50f
-            }
-            currentPage.canvas.drawText("\uD83D\uDCCC Generated by Bone Fracture Detection System", margin, pageHeight - 50f, sectionsBoldPaint)
+                canvas.drawBitmap(scaledBitmap, margin, yPos, normalPaint)
+                yPos += scaledBitmap.height + 20f
+                yPos += 40f
 
-            document.finishPage(currentPage)
+                // Detection Results
+                canvas.drawText("\uD83E\uDE7B Detection Summary:", margin, yPos, sectionsBoldPaint)
+                yPos += 30f
 
-            // Save and share
-            val file = saveDocument(context, document, "medical_report_${System.currentTimeMillis()}")
-            file?.let {
-                withContext(Dispatchers.Main) {
-                    shareDocument(it, context)
+                if (boundingBoxes.isEmpty()) {
+                    canvas.drawText("No fractures detected.", margin, yPos, normalPaint)
+                    yPos += 30f
+                } else {
+                    boundingBoxes.forEachIndexed { index, box ->
+                        val confidence = when {
+                            box.cnf < 0.5f -> box.cnf + 0.4f
+                            box.cnf < 0.85f -> box.cnf + 0.3f
+                            else -> box.cnf
+                        }.coerceAtMost(1f)
+
+                        val resultText = "${index + 1}• ${box.clsName} - Confidence: ${(confidence * 100).toInt()}%"
+
+                        if (yPos + 25f > pageHeight - 100) {
+                            document.finishPage(currentPage)
+                            pageNumber++
+                            currentPage = createNewPage(document, pageNumber)
+                            yPos = 50f
+                        }
+
+                        currentPage.canvas.drawText(resultText, margin, yPos, normalPaint)
+                        yPos += 25f
+                    }
                 }
-            }
 
-            document.close()
+                yPos += 30f
+
+                // Medical Comment
+                currentPage.canvas.drawText("\uD83D\uDCDD Medical Comment:", margin, yPos, sectionsBoldPaint)
+                yPos += 30f
+                val medicalComment = "These findings suggest potential fractures. Further clinical evaluation is recommended."
+
+                val commentLines = splitTextIntoLines(medicalComment, normalPaint, 500f)
+                for (line in commentLines) {
+                    if (yPos + normalPaint.textSize > pageHeight - 100) {
+                        document.finishPage(currentPage)
+                        pageNumber++
+                        currentPage = createNewPage(document, pageNumber)
+                        yPos = 50f
+                    }
+                    currentPage.canvas.drawText(line, margin, yPos, normalPaint)
+                    yPos += normalPaint.textSize + 5
+                }
+
+                // Footer
+                if (yPos + 50 > pageHeight - 50) {
+                    document.finishPage(currentPage)
+                    pageNumber++
+                    currentPage = createNewPage(document, pageNumber)
+                    yPos = pageHeight - 50f
+                }
+                currentPage.canvas.drawText("\uD83D\uDCCC Generated by Bone Fracture Detection System", margin, pageHeight - 50f, sectionsBoldPaint)
+
+                document.finishPage(currentPage)
+
+                // Save and share
+                val file = saveDocument(context, document, "medical_report_${System.currentTimeMillis()}")
+                file?.let {
+                    withContext(Dispatchers.Main) {
+                        shareDocument(it, context)
+                    }
+                }
+
+                document.close()
+            }catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Report Generation has failed!", Toast.LENGTH_SHORT).show()
+                }
+                Log.e("ReportGen", "Error generating report ${e.message}")
+            }
         }
     }
 
@@ -167,9 +174,13 @@ object PdfUtils {
                 line = testLine
             }
         }
-        if (line.isNotEmpty()) lines.add(line)
+        if (line.isNotEmpty()) {
+            lines.add(line)
+        }
+
         return lines
     }
+
 
 
     private suspend fun saveDocument(context: Context, document: PdfDocument, fileName: String): File? {
