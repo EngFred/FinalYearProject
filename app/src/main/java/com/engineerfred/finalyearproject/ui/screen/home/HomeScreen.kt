@@ -2,6 +2,7 @@ package com.engineerfred.finalyearproject.ui.screen.home
 
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,17 +17,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,20 +48,21 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.engineerfred.finalyearproject.R
-import com.engineerfred.finalyearproject.domain.model.Detector
+import com.engineerfred.finalyearproject.domain.model.LiteModel
 import com.engineerfred.finalyearproject.ui.components.DetectionModeSelector
 import com.engineerfred.finalyearproject.ui.components.ImageWithBoundingBoxes
 import com.engineerfred.finalyearproject.ui.theme.DarkGrayBlue
 import com.engineerfred.finalyearproject.ui.theme.White10
 
+
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: AppViewModel = hiltViewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     onCaptureImage: () -> Unit,
     capturedImageUrl:  String?,
-    detectionModel: Detector?,
-    onModelSelected: (Detector) -> Unit,
+    detectionModel: LiteModel?,
+    onModelSelected: (LiteModel) -> Unit
 ) {
 
     val context = LocalContext.current
@@ -67,13 +70,13 @@ fun HomeScreen(
 
     LaunchedEffect(capturedImageUrl) {
         capturedImageUrl?.let {
-            viewModel.onEvent(AppUiEvents.SelectedImage(context, it.toUri()))
+            viewModel.onEvent(HomeUiEvents.SelectedImage(context, it.toUri()))
         }
     }
 
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            viewModel.onEvent(AppUiEvents.SelectedImage(context, it))
+            viewModel.onEvent(HomeUiEvents.SelectedImage(context, it))
         }
     }
 
@@ -84,6 +87,19 @@ fun HomeScreen(
             Toast.makeText(context, "Camera permission required", Toast.LENGTH_SHORT).show()
         }
     }
+
+    val storagePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                uiState.imageBitmap?.let {
+                    viewModel.onEvent(HomeUiEvents.GeneratedMedicalReport(context))
+                } ?: Toast.makeText(context, "No detection results found!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Permission Denied!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
 
     Column(
         modifier = modifier
@@ -110,11 +126,38 @@ fun HomeScreen(
             )
 
             androidx.compose.animation.AnimatedVisibility(visible = uiState.imageUri != null && uiState.isDetecting.not() && uiState.boundingBoxes.isNotEmpty()) {
-                IconButton(onClick = { Toast.makeText(context, "To be implemented soon!", Toast.LENGTH_SHORT).show() }) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_download),
-                        contentDescription = "download button"
-                    )
+                IconButton(onClick = {
+                    when {
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+                            // Android 10+ (Scoped Storage) - No permission required
+                            if (uiState.boundingBoxes.isNotEmpty()) {
+                                uiState.imageBitmap?.let {
+                                    viewModel.onEvent(HomeUiEvents.GeneratedMedicalReport(context))
+                                } ?: Toast.makeText(context, "No detection results found!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED -> {
+                            // Permission is already granted
+                            if (uiState.boundingBoxes.isNotEmpty()) {
+                                uiState.imageBitmap?.let {
+                                    viewModel.onEvent(HomeUiEvents.GeneratedMedicalReport(context))
+                                } ?: Toast.makeText(context, "No detection results found!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        else -> {
+                            // Request permission
+                            storagePermissionLauncher.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        }
+                    }
+                }, enabled = uiState.savingDocument.not()) {
+                    if( uiState.savingDocument.not() ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_download),
+                            contentDescription = "download button"
+                        )
+                    } else {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                    }
                 }
             }
         }
@@ -210,10 +253,17 @@ fun HomeScreen(
                     ) {
                         Text(
                             "Detection Results will be shown here!",
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = Color.LightGray
+                            style = TextStyle(
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp,
+                                color = Color.LightGray,
+                                shadow = Shadow(
+                                    color = Color.Black,
+                                    offset = Offset(2f, 2f),
+                                    blurRadius = 2f
+                                )
+                            )
                         )
                     }
                 }
@@ -248,7 +298,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     style = TextStyle(
                         textAlign = TextAlign.Center,
-                        fontSize = 15.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
                         shadow = Shadow(
@@ -265,10 +315,10 @@ fun HomeScreen(
             AnimatedVisibility(visible = uiState.imageUri != null ) {
                 DetectionModeSelector(
                     isDetecting = uiState.isDetecting,
-                    onDetect = { detector ->
+                    onDetect = { model ->
                         uiState.imageBitmap?.let {
-                            onModelSelected.invoke(detector)
-                            viewModel.onEvent(AppUiEvents.DetectClicked(detector, context))
+                            onModelSelected.invoke(model)
+                            viewModel.onEvent(HomeUiEvents.DetectClicked(model, context))
                         }
                     },
                     detectionModel = detectionModel,

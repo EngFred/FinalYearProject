@@ -40,14 +40,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.engineerfred.finalyearproject.R
-import com.engineerfred.finalyearproject.domain.model.Detector
+import com.engineerfred.finalyearproject.domain.model.LiteModel
 import com.engineerfred.finalyearproject.ui.theme.LightTeal
 import com.engineerfred.finalyearproject.ui.theme.box
 
 @Composable
 fun DetectionModeSelector(
-    onDetect: (Detector) -> Unit,
-    detectionModel: Detector?,
+    onDetect: (LiteModel) -> Unit,
+    detectionModel: LiteModel?,
     enabled: Boolean = true,
     isDetecting: Boolean
 ) {
@@ -73,7 +73,7 @@ fun DetectionModeSelector(
                 } else {
                     selectedModel?.let {
                         expanded = false
-                        onDetect(Detector.valueOf(it))
+                        onDetect(LiteModel.valueOf(it))
                     }
                 }
             },
@@ -87,8 +87,8 @@ fun DetectionModeSelector(
                     "Choose detection model"
                 } else {
                     when(selectedModel) {
-                        Detector.DETECTOR_1.name -> "Detect with Model 1"
-                        Detector.DETECTOR_2.name -> "Detect with Model 2"
+                        LiteModel.MODEL_1.name -> "Detect with Model 1"
+                        LiteModel.MODEL_2.name -> "Detect with Model 2"
                         else -> "Detect with Model 3"
                     }
                 }
@@ -132,14 +132,14 @@ fun DetectionModeSelector(
                 colors = CardDefaults.cardColors(containerColor = LightTeal),
                 elevation = CardDefaults.cardElevation(8.dp)
             ) {
-                Detector.entries.forEachIndexed { index, detector ->
+                LiteModel.entries.forEachIndexed { index, model ->
                     Column {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clickable {
-                                    selectedModel = detector.name
-                                    onDetect(detector)
+                                    selectedModel = model.name
+                                    onDetect(model)
                                     expanded = false
                                 }
                                 .fillMaxWidth()
@@ -152,7 +152,7 @@ fun DetectionModeSelector(
                                     .padding(end = 4.dp),
                                 style = TextStyle(
                                     color = Color.White,
-                                    fontWeight = FontWeight.Medium,
+                                    fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
                                     letterSpacing = 0.5.sp,
                                     shadow = Shadow(
@@ -162,14 +162,14 @@ fun DetectionModeSelector(
                                     ),
                                 )
                             )
-                            val icon = if( selectedModel ==  detector.name ) R.drawable.ic_circle_check else R.drawable.ic_circle_unchecked
+                            val icon = if( selectedModel ==  model.name ) R.drawable.ic_circle_check else R.drawable.ic_circle_unchecked
                             Icon(
                                 painter = painterResource(icon),
                                 contentDescription = null,
                                 tint = box
                             )
                         }
-                        if (index < Detector.entries.size - 1) {
+                        if (index < LiteModel.entries.size - 1) {
                             HorizontalDivider()
                         }
                     }

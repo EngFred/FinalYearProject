@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
+import androidx.core.graphics.toColorInt
 import com.engineerfred.finalyearproject.domain.model.BoundingBox
 
 @Composable
@@ -52,9 +53,16 @@ fun ImageWithBoundingBoxes(bitmap: Bitmap, boundingBoxes: List<BoundingBox>) {
 
                 val labelText = "fracture: ${(confidence * 100).toInt()}%"
 
+                // Assign colors based on confidence level
+                val (boxColor, bgColor) = when {
+                    confidence < 0.5f -> Pair("#FFA500".toColorInt(), "#FFD580".toColorInt()) // Orange
+                    confidence < 0.85f -> Pair("#1E90FF".toColorInt(), "#87CEFA".toColorInt()) // Blue
+                    else -> Pair("#32CD32".toColorInt(), "#98FB98".toColorInt()) // Green
+                }
+
                 // Draw bounding box
                 drawRect(
-                    color = Color(0xFF8ECB1F), // Greenish color
+                    color = Color(boxColor), // Greenish color
                     topLeft = Offset(x1, y1),
                     size = Size(x2 - x1, y2 - y1),
                     style = Stroke(width = 4f)
@@ -71,7 +79,7 @@ fun ImageWithBoundingBoxes(bitmap: Bitmap, boundingBoxes: List<BoundingBox>) {
 
                 // Draw label background
                 drawRoundRect(
-                    color = Color(0xFF8ECB1F), // Semi-transparent black for better contrast
+                    color = Color(bgColor),
                     topLeft = Offset(x1 - 5, y1 - textHeight - 10),
                     size = Size(textWidth + 20, textHeight + 10),
                     cornerRadius = CornerRadius(8f, 8f)

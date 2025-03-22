@@ -18,7 +18,7 @@ import kotlinx.coroutines.withContext
 import java.util.PriorityQueue
 import javax.inject.Inject
 
-class OfflineDetector @Inject constructor(
+class Detector @Inject constructor(
     private val context: Context,
     private val modelPath: String
 ) {

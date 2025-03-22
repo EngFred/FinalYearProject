@@ -3,8 +3,6 @@ package com.engineerfred.finalyearproject.ui.nav
 import android.net.Uri
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
@@ -16,10 +14,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.engineerfred.finalyearproject.domain.model.Detector
+import com.engineerfred.finalyearproject.domain.model.LiteModel
 import com.engineerfred.finalyearproject.ui.screen.camera.CameraScreen
 import com.engineerfred.finalyearproject.ui.screen.home.HomeScreen
 import com.engineerfred.finalyearproject.ui.screen.onBoarding.OnBoardingScreen
+import com.engineerfred.finalyearproject.ui.screen.username.UsernameScreen
 import com.engineerfred.finalyearproject.ui.theme.DarkGrayBlue
 import com.engineerfred.finalyearproject.ui.theme.LightTeal
 
@@ -28,12 +27,21 @@ fun AppGraph(
     modifier: Modifier = Modifier,
     onOnBoardCompleted: () -> Unit,
     isOnBoardCompleted: Boolean,
-    detectionModel: Detector?,
-    onModelSelected: (Detector) -> Unit,
+    username: String?,
+    detectionModel: LiteModel?,
+    onModelSelected: (LiteModel) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
 
-    val startDestination = if ( isOnBoardCompleted.not() ) Routes.onBoardScreen.destination else Routes.HomeScreen.destination
+    val startDestination = if ( isOnBoardCompleted.not() ) {
+        Routes.OnBoardScreen.destination
+    } else {
+        if ( username.isNullOrEmpty() ) {
+            Routes.UsernameScreen.destination
+        } else {
+            Routes.HomeScreen.destination
+        }
+    }
 
     NavHost(
         modifier = modifier.fillMaxSize().background(
@@ -51,19 +59,19 @@ fun AppGraph(
                 slideInHorizontally(
                     initialOffsetX = { it },
                     animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                ) + fadeIn()
+                )
             },
             exitTransition = {
                 slideOutHorizontally(
                     targetOffsetX = { -it },
                     animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                ) + fadeOut()
+                )
             },
             popExitTransition = {
                 slideOutHorizontally(
                     targetOffsetX = { -it },
                     animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
-                ) + fadeOut()
+                )
             }
         ) { navBackStackEntry ->
             val capturedImageUrl = navBackStackEntry.savedStateHandle.get<String>("captured_img_url")
@@ -75,17 +83,17 @@ fun AppGraph(
                     }
                 },
                 detectionModel = detectionModel,
-                onModelSelected = onModelSelected,
+                onModelSelected = onModelSelected
             )
         }
 
         composable(
-            route = Routes.onBoardScreen.destination
+            route = Routes.OnBoardScreen.destination
         ) {
             OnBoardingScreen(
                 onNavigateToHome = {
                     onOnBoardCompleted()
-                    navController.navigate(Routes.HomeScreen.destination){
+                    navController.navigate(Routes.UsernameScreen.destination){
                         launchSingleTop = true
                         popUpTo(0)
                     }
@@ -106,6 +114,25 @@ fun AppGraph(
                 },
                 onBack = {
                     navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = Routes.UsernameScreen.destination,
+            enterTransition = {
+                slideInHorizontally(
+                    initialOffsetX = { it },
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                )
+            }
+        ) {
+            UsernameScreen(
+                onUsernameSaved = {
+                    navController.navigate(Routes.HomeScreen.destination){
+                        launchSingleTop = true
+                        popUpTo(0)
+                    }
                 }
             )
         }

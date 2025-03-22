@@ -39,7 +39,7 @@ fun OnBoardingScreen(
         ),
         OnboardingPage(
             title = "How It Works",
-            description = "Select or capture an image, choose a detection model, and view results.",
+            description = "Select or capture an image, choose a detection model for the work, View the results, Generate a report and share to any medical professional for further analysis.",
             imageRes = R.drawable.dataset_cover
         ),
         OnboardingPage(

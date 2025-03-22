@@ -15,7 +15,8 @@ val LightTeal = Color(0xFF4CA1AF)
 val White10 = Color(0x1AFFFFFF)
 
 val SmokyBlack = Color(0xFF0F0F0F)
-val SpaceBlack = Color(0xFF101820)
-val DeepSlate = Color(0xFF2C3E50)
 val box = Color(0xFF8ECB1F)
+
+val LightRed = Color(0xFFC9507E)
+
 

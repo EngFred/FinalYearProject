@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
                         onModelSelected = {
                             prefsStore.setSelectedModel(it)
                         },
+                        username = prefsStore.getUsername(),
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

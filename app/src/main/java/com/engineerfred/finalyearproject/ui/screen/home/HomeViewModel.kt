@@ -4,8 +4,10 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.engineerfred.finalyearproject.data.local.OfflineDetector
-import com.engineerfred.finalyearproject.domain.model.Detector
+import com.engineerfred.finalyearproject.data.local.Detector
+import com.engineerfred.finalyearproject.data.local.PrefsStore
+import com.engineerfred.finalyearproject.domain.model.LiteModel
+import com.engineerfred.finalyearproject.utils.PdfUtils.generateMedicalReport
 import com.engineerfred.finalyearproject.utils.toBitmap
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -17,23 +19,52 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class AppViewModel @Inject constructor(
+class HomeViewModel @Inject constructor(
+    prefsStore: PrefsStore
 ): ViewModel() {
 
-    private val _uiState = MutableStateFlow(AppUiState())
+    private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
-    private var detectorCache: MutableMap<Detector, OfflineDetector?> = mutableMapOf()
+    init {
+        prefsStore.getUsername()?.let { username ->
+            _uiState.update {
+                it.copy(
+                    username = username
+                )
+            }
+        }
+    }
+
+    private var detectorCache: MutableMap<LiteModel, Detector?> = mutableMapOf()
 
 
-    fun onEvent(event: AppUiEvents) {
+    fun onEvent(event: HomeUiEvents) {
         when(event) {
-            is AppUiEvents.DetectClicked -> {
-                detect(event.detector, event.context)
+            is HomeUiEvents.DetectClicked -> {
+                detect(event.model, event.context)
             }
 
-            is AppUiEvents.SelectedImage -> {
+            is HomeUiEvents.SelectedImage -> {
                 updateImageUriAndBitmap(event.context, event.imageUri)
+            }
+
+            is HomeUiEvents.GeneratedMedicalReport -> {
+                if ( _uiState.value.boundingBoxes.isNotEmpty() && _uiState.value.imageBitmap != null && _uiState.value.username.isNullOrEmpty().not() ) {
+                    viewModelScope.launch {
+                        _uiState.update {
+                            it.copy(
+                                savingDocument = true
+                            )
+                        }
+                        generateMedicalReport(event.context, _uiState.value.username!!, _uiState.value.boundingBoxes, _uiState.value.imageBitmap!!)
+                        _uiState.update {
+                            it.copy(
+                                savingDocument = false
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -49,7 +80,7 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    private fun detect(detector: Detector, context: Context) {
+    private fun detect(model: LiteModel, context: Context) {
         _uiState.update {
             it.copy(
                 feedbackMessage = null
@@ -68,7 +99,7 @@ class AppViewModel @Inject constructor(
             _uiState.update {
                 it.copy(isDetecting = true)
             }
-            val detectorInstance = detectorCache[detector] ?: createDetector(detector, context)
+            val detectorInstance = detectorCache[model] ?: createDetector(model, context)
             val boundingBoxes = detectorInstance.detect(_uiState.value.imageBitmap!!)
             _uiState.update {
                 it.copy(
@@ -82,14 +113,15 @@ class AppViewModel @Inject constructor(
         }
     }
 
-    private suspend fun createDetector(detector: Detector, context: Context): OfflineDetector {
+    private suspend fun createDetector(model: LiteModel, context: Context): Detector {
         return withContext(Dispatchers.IO) {
-            val modelPath = when (detector) {
-                Detector.DETECTOR_1 -> "model1.tflite"
-                Detector.DETECTOR_2 -> "model2.tflite"
-                Detector.DETECTOR_3 -> "model3.tflite"
+            val modelPath = when (model) {
+                LiteModel.MODEL_1 -> "model1.tflite"
+                LiteModel.MODEL_2 -> "model2.tflite"
+                LiteModel.MODEL_3 -> "model3.tflite"
             }
-            modelPath.let { OfflineDetector(context, it).also { detectorCache[detector] = it } }
+            modelPath.let { Detector(context, it)
+                .also { detectorCache[model] = it } }
         }
     }
 
