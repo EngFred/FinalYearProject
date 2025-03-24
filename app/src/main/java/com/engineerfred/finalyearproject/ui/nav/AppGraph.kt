@@ -14,7 +14,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.engineerfred.finalyearproject.domain.model.LiteModel
 import com.engineerfred.finalyearproject.ui.screen.camera.CameraScreen
 import com.engineerfred.finalyearproject.ui.screen.home.HomeScreen
 import com.engineerfred.finalyearproject.ui.screen.onBoarding.OnBoardingScreen
@@ -28,8 +27,6 @@ fun AppGraph(
     onOnBoardCompleted: () -> Unit,
     isOnBoardCompleted: Boolean,
     username: String?,
-    detectionModel: LiteModel?,
-    onModelSelected: (LiteModel) -> Unit,
     navController: NavHostController = rememberNavController()
 ) {
 
@@ -81,9 +78,7 @@ fun AppGraph(
                     navController.navigate(Routes.CameraScreen.destination){
                         launchSingleTop = true
                     }
-                },
-                detectionModel = detectionModel,
-                onModelSelected = onModelSelected
+                }
             )
         }
 

@@ -13,6 +13,7 @@ val White10 = Color(0x1AFFFFFF)
 
 val SmokyBlack = Color(0xFF0F0F0F)
 val box = Color(0xFF8ECB1F)
+val MyPrimary = Color(0xFF008080)
 
 val LightRed = Color(0xFFC9507E)
 

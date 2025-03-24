@@ -39,10 +39,6 @@ class MainActivity : ComponentActivity() {
                             prefsStore.setOnboardingCompleted(true)
                         },
                         isOnBoardCompleted = prefsStore.isOnboardingCompleted(),
-                        detectionModel = prefsStore.getSelectedModel(),
-                        onModelSelected = {
-                            prefsStore.setSelectedModel(it)
-                        },
                         username = prefsStore.getUsername(),
                         modifier = Modifier.padding(innerPadding)
                     )

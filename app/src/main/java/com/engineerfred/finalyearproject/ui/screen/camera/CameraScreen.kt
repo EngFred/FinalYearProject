@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -201,7 +202,7 @@ fun CameraScreen(
                 .padding(bottom = 100.dp)
                 .padding(horizontal = 16.dp)
                 .height(10.dp),
-            colors = SliderDefaults.colors(activeTrackColor = Color.Green, thumbColor = Color.White)
+            colors = SliderDefaults.colors(activeTrackColor = MaterialTheme.colorScheme.primary, thumbColor = Color.White)
         )
 
         // Capture Image Button
@@ -233,7 +234,7 @@ fun CameraScreen(
                     if (isCapturing) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(64.dp),
-                            color = Color.Green,
+                            color = MaterialTheme.colorScheme.primary,
                             strokeWidth = 4.dp
                         )
                     } else {

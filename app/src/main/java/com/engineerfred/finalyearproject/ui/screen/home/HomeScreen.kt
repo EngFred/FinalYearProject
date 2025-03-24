@@ -48,21 +48,17 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.engineerfred.finalyearproject.R
-import com.engineerfred.finalyearproject.domain.model.LiteModel
 import com.engineerfred.finalyearproject.ui.components.DetectionModeSelector
 import com.engineerfred.finalyearproject.ui.components.ImageWithBoundingBoxes
 import com.engineerfred.finalyearproject.ui.theme.DarkGrayBlue
 import com.engineerfred.finalyearproject.ui.theme.White10
-
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
     onCaptureImage: () -> Unit,
-    capturedImageUrl:  String?,
-    detectionModel: LiteModel?,
-    onModelSelected: (LiteModel) -> Unit
+    capturedImageUrl:  String?
 ) {
 
     val context = LocalContext.current
@@ -107,14 +103,14 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().background(DarkGrayBlue).height(60.dp).padding(start = 18.dp, end = 8.dp, top = 16.dp, bottom = 16.dp),
+            modifier = Modifier.fillMaxWidth().background(DarkGrayBlue).height(60.dp).padding(start = 20.dp, end = 10.dp, top = 16.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "FracDetect",
                 modifier = Modifier.weight(1f).padding(end = 4.dp),
                 style = TextStyle(
-                    color = MaterialTheme.colorScheme.primary,
+                    color = Color.White,
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 22.sp,
                     shadow = Shadow(
@@ -278,8 +274,8 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         style = TextStyle(
                             textAlign = TextAlign.Center,
-                            fontSize = 17.sp,
-                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 14.sp,
+                            color = Color.LightGray,
                             fontWeight = FontWeight.Bold,
                             shadow = Shadow(
                                 color = Color.Black.copy(alpha = 0.5f),
@@ -299,7 +295,7 @@ fun HomeScreen(
                     style = TextStyle(
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = Color.LightGray,
                         fontWeight = FontWeight.Bold,
                         shadow = Shadow(
                             color = Color.Black.copy(alpha = 0.5f),
@@ -317,11 +313,10 @@ fun HomeScreen(
                     isDetecting = uiState.isDetecting,
                     onDetect = { model ->
                         uiState.imageBitmap?.let {
-                            onModelSelected.invoke(model)
-                            viewModel.onEvent(HomeUiEvents.DetectClicked(model, context))
+                            viewModel.onEvent(HomeUiEvents.ModelUpdated(model, context))
                         }
                     },
-                    detectionModel = detectionModel,
+                    detectionModel = uiState.usedModel,
                     enabled = uiState.isDetecting.not()
                 )
             }

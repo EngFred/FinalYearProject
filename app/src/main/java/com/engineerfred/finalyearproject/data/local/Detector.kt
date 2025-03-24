@@ -179,8 +179,8 @@ class Detector @Inject constructor(
         private const val INPUT_STANDARD_DEVIATION = 255f
         private val INPUT_IMAGE_TYPE = DataType.FLOAT32
         private val OUTPUT_IMAGE_TYPE = DataType.FLOAT32
-        private const val CONFIDENCE_THRESHOLD = 0.1F //2
-        private const val IOU_THRESHOLD = 0.5F //3
+        private const val CONFIDENCE_THRESHOLD = 0.15F //2
+        private const val IOU_THRESHOLD = 0.15F //3
     }
 
     fun closeInterpreter() {

@@ -2,6 +2,7 @@ package com.engineerfred.finalyearproject.ui.screen.home
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.engineerfred.finalyearproject.data.local.Detector
@@ -20,20 +21,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    prefsStore: PrefsStore
+    private val prefsStore: PrefsStore
 ): ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
     init {
-        prefsStore.getUsername()?.let { username ->
-            _uiState.update {
-                it.copy(
-                    username = username
-                )
-            }
-        }
+        getUsername()
+        getModel()
     }
 
     private var detectorCache: MutableMap<LiteModel, Detector?> = mutableMapOf()
@@ -41,7 +37,7 @@ class HomeViewModel @Inject constructor(
 
     fun onEvent(event: HomeUiEvents) {
         when(event) {
-            is HomeUiEvents.DetectClicked -> {
+            is HomeUiEvents.ModelUpdated -> {
                 detect(event.model, event.context)
             }
 
@@ -80,48 +76,89 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun detect(model: LiteModel, context: Context) {
+    private fun detect(model: LiteModel?, context: Context) {
         _uiState.update {
             it.copy(
                 feedbackMessage = null
             )
         }
-        if ( _uiState.value.imageBitmap == null ) {
+
+        if (_uiState.value.imageBitmap == null) {
             _uiState.update {
-                it.copy(
-                    feedbackMessage = "No image selected!"
-                )
+                it.copy(feedbackMessage = "No image selected!")
             }
             return
         }
 
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(isDetecting = true)
-            }
-            val detectorInstance = detectorCache[model] ?: createDetector(model, context)
+
+            _uiState.update { it.copy(isDetecting = true) }
+
+            saveModel(model)
+
+            // Select a model (either the provided one or a random one)
+            val selectedModel = _uiState.value.usedModel ?: LiteModel.entries.toTypedArray().random()
+
+            val detectorInstance = detectorCache[selectedModel] ?: createDetector(selectedModel, context)
+
             val boundingBoxes = detectorInstance.detect(_uiState.value.imageBitmap!!)
+
             _uiState.update {
                 it.copy(
+                    usedModel = selectedModel,
                     boundingBoxes = boundingBoxes,
-                    feedbackMessage = if ( boundingBoxes.isEmpty() ) "No fractures detected! If your not contented with the results, try again with another model." else null,
+                    feedbackMessage = if (boundingBoxes.isEmpty())
+                        "No fractures detected! If you're not satisfied, try another model."
+                    else null,
+                    isDetecting = false
                 )
-            }
-            _uiState.update {
-                it.copy(isDetecting = false)
             }
         }
     }
 
+
     private suspend fun createDetector(model: LiteModel, context: Context): Detector {
         return withContext(Dispatchers.IO) {
             val modelPath = when (model) {
-                LiteModel.MODEL_1 -> "model1.tflite"
-                LiteModel.MODEL_2 -> "model2.tflite"
-                LiteModel.MODEL_3 -> "model3.tflite"
+                LiteModel.FAST -> "best_fast.tflite"
+                LiteModel.BALANCED -> "best_balanced.tflite"
+                LiteModel.PRECISION -> "best_precision.tflite"
+                LiteModel.EXTENDED -> "best_extended.tflite"
             }
             modelPath.let { Detector(context, it)
                 .also { detectorCache[model] = it } }
+        }
+    }
+
+    private fun saveModel(model: LiteModel?) {
+        if (model != null) {
+            if ( model != _uiState.value.usedModel ) {
+                prefsStore.setSelectedModel(model)
+                _uiState.update {
+                    it.copy(usedModel = model)
+                }
+            }
+        }
+    }
+
+    private fun getModel() {
+        prefsStore.getSelectedModel()?.let { model ->
+            Log.wtf("LITE_MODEL", "Model from preferences -> ${model.name}")
+            _uiState.update {
+                it.copy(
+                    usedModel = model
+                )
+            }
+        } ?: Log.wtf("LITE_MODEL", "No model found in preferences")
+    }
+
+    private fun getUsername() {
+        prefsStore.getUsername()?.let { username ->
+            _uiState.update {
+                it.copy(
+                    username = username
+                )
+            }
         }
     }
 

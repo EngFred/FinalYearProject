@@ -1,7 +1,6 @@
 package com.engineerfred.finalyearproject.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -12,7 +11,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = box,
+    primary = MyPrimary,
     secondary = PurpleGrey40,
     tertiary = Pink80,
     background = SmokyBlack,
@@ -20,7 +19,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = box,
+    primary = MyPrimary,
     secondary = PurpleGrey40,
     tertiary = Pink40,
     background = SmokyBlack,

@@ -1,6 +1,5 @@
 package com.engineerfred.finalyearproject.ui.components
 
-
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
@@ -37,16 +36,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.engineerfred.finalyearproject.R
 import com.engineerfred.finalyearproject.domain.model.LiteModel
 import com.engineerfred.finalyearproject.ui.theme.LightTeal
-import com.engineerfred.finalyearproject.ui.theme.box
 
 @Composable
 fun DetectionModeSelector(
-    onDetect: (LiteModel) -> Unit,
+    onDetect: (LiteModel?) -> Unit,
     detectionModel: LiteModel?,
     enabled: Boolean = true,
     isDetecting: Boolean
@@ -54,8 +53,12 @@ fun DetectionModeSelector(
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    var selectedModel by remember {
-        mutableStateOf(detectionModel?.name)
+    val buttonText = when(detectionModel) {
+        LiteModel.FAST -> "BoneDetect-F"
+        LiteModel.BALANCED -> "BoneDetect-B"
+        LiteModel.PRECISION -> "BoneDetect-P"
+        LiteModel.EXTENDED -> "BoneDetect-X"
+        else -> "Detect Fractures"
     }
 
     Column(
@@ -64,36 +67,24 @@ fun DetectionModeSelector(
     ) {
         Button(
             onClick = {
-                if ( selectedModel == null ) {
-                    if ( enabled ) {
-                        expanded = !expanded
-                    } else {
-                        Toast.makeText(context, "Please wait!", Toast.LENGTH_SHORT).show()
-                    }
+                expanded = false
+                if( detectionModel == null ) {
+                    onDetect(null)
                 } else {
-                    selectedModel?.let {
-                        expanded = false
-                        onDetect(LiteModel.valueOf(it))
-                    }
+                    onDetect(detectionModel)
                 }
             },
             enabled = isDetecting.not(),
             modifier = Modifier.fillMaxWidth().height(60.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                disabledContainerColor = MaterialTheme.colorScheme.primary
+            )
         ) {
             if( isDetecting.not() ) {
-                val btnText = if(selectedModel == null ) {
-                    "Choose detection model"
-                } else {
-                    when(selectedModel) {
-                        LiteModel.MODEL_1.name -> "Detect with Model 1"
-                        LiteModel.MODEL_2.name -> "Detect with Model 2"
-                        else -> "Detect with Model 3"
-                    }
-                }
                 Text(
-                    text = btnText,
+                    text = buttonText,
                     modifier = Modifier.weight(1f).padding(end = 4.dp),
                     color = Color.White,
                     style = TextStyle(
@@ -133,12 +124,17 @@ fun DetectionModeSelector(
                 elevation = CardDefaults.cardElevation(8.dp)
             ) {
                 LiteModel.entries.forEachIndexed { index, model ->
+                    val modelName = when(model) {
+                        LiteModel.FAST -> "Detect with BoneDetect-F (Fast)"
+                        LiteModel.BALANCED -> "Detect with BoneDetect-B (Balanced)"
+                        LiteModel.PRECISION -> "Detect with BoneDetect-P (Precision)"
+                        LiteModel.EXTENDED -> "Detect with BoneDetect-X (Extended)"
+                    }
                     Column {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clickable {
-                                    selectedModel = model.name
                                     onDetect(model)
                                     expanded = false
                                 }
@@ -146,14 +142,16 @@ fun DetectionModeSelector(
                                 .padding(vertical = 8.dp, horizontal = 16.dp),
                         ) {
                             Text(
-                                text = "Use Model ${index + 1}",
+                                text = modelName,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
                                     .weight(1f)
                                     .padding(end = 4.dp),
                                 style = TextStyle(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
+                                    fontSize = 17.sp,
                                     letterSpacing = 0.5.sp,
                                     shadow = Shadow(
                                         color = Color.Black.copy(alpha = 0.5f),
@@ -162,11 +160,11 @@ fun DetectionModeSelector(
                                     ),
                                 )
                             )
-                            val icon = if( selectedModel ==  model.name ) R.drawable.ic_circle_check else R.drawable.ic_circle_unchecked
+                            val icon = if( detectionModel ==  model ) R.drawable.ic_circle_check else R.drawable.ic_circle_unchecked
                             Icon(
                                 painter = painterResource(icon),
                                 contentDescription = null,
-                                tint = box
+                                tint = Color.White
                             )
                         }
                         if (index < LiteModel.entries.size - 1) {

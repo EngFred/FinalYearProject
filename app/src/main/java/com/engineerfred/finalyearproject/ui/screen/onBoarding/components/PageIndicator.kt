@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.engineerfred.finalyearproject.ui.theme.box
 
 @Composable
 fun PageIndicator(currentPage: Int, totalPages: Int) {
@@ -27,7 +27,7 @@ fun PageIndicator(currentPage: Int, totalPages: Int) {
                     .size(17.dp)
                     .padding(4.dp)
                     .clip(CircleShape)
-                    .background(if (index == currentPage) box else Color.LightGray)
+                    .background(if (index == currentPage) MaterialTheme.colorScheme.primary else Color.LightGray)
             )
         }
     }

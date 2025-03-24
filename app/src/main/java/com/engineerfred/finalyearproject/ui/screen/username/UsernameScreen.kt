@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -26,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.engineerfred.finalyearproject.ui.theme.LightRed
-import com.engineerfred.finalyearproject.ui.theme.box
 
 @Composable
 fun UsernameScreen(
@@ -75,8 +75,8 @@ fun UsernameScreen(
                 unfocusedTextColor = Color.White,
                 focusedLabelColor = Color.White,
                 unfocusedLabelColor = Color.White,
-                focusedIndicatorColor = box,
-                unfocusedIndicatorColor = box,
+                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.primary,
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
                 errorTextColor = LightRed,
@@ -85,7 +85,7 @@ fun UsernameScreen(
                 errorIndicatorColor = LightRed,
                 errorLabelColor = LightRed,
                 errorContainerColor = Color.Transparent,
-                cursorColor = box,
+                cursorColor = MaterialTheme.colorScheme.primary,
             )
         )
 
@@ -106,10 +106,10 @@ fun UsernameScreen(
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                containerColor = box,
+                containerColor = MaterialTheme.colorScheme.primary,
                 disabledContentColor = Color.White,
                 contentColor = Color.White,
-                disabledContainerColor = box
+                disabledContainerColor = MaterialTheme.colorScheme.primary
             ),
             modifier = Modifier
                 .fillMaxWidth(.5f)
