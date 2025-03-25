@@ -76,7 +76,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun detect(model: LiteModel?, context: Context) {
+    private fun detect(model: LiteModel, context: Context) {
         _uiState.update {
             it.copy(
                 feedbackMessage = null
@@ -96,16 +96,13 @@ class HomeViewModel @Inject constructor(
 
             saveModel(model)
 
-            // Select a model (either the provided one or a random one)
-            val selectedModel = _uiState.value.usedModel ?: LiteModel.entries.toTypedArray().random()
-
-            val detectorInstance = detectorCache[selectedModel] ?: createDetector(selectedModel, context)
+            val detectorInstance = detectorCache[model] ?: createDetector(model, context)
 
             val boundingBoxes = detectorInstance.detect(_uiState.value.imageBitmap!!)
 
             _uiState.update {
                 it.copy(
-                    usedModel = selectedModel,
+                    usedModel = model,
                     boundingBoxes = boundingBoxes,
                     feedbackMessage = if (boundingBoxes.isEmpty())
                         "No fractures detected! If you're not satisfied, try another model."
@@ -142,14 +139,12 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun getModel() {
-        prefsStore.getSelectedModel()?.let { model ->
-            Log.wtf("LITE_MODEL", "Model from preferences -> ${model.name}")
-            _uiState.update {
-                it.copy(
-                    usedModel = model
-                )
-            }
-        } ?: Log.wtf("LITE_MODEL", "No model found in preferences")
+        val savedModel = prefsStore.getSelectedModel()
+        _uiState.update {
+            it.copy(
+                usedModel = savedModel ?: LiteModel.FAST
+            )
+        }
     }
 
     private fun getUsername() {

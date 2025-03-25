@@ -45,7 +45,7 @@ import com.engineerfred.finalyearproject.ui.theme.LightTeal
 
 @Composable
 fun DetectionModeSelector(
-    onDetect: (LiteModel?) -> Unit,
+    onDetect: (LiteModel) -> Unit,
     detectionModel: LiteModel?,
     enabled: Boolean = true,
     isDetecting: Boolean
@@ -68,11 +68,9 @@ fun DetectionModeSelector(
         Button(
             onClick = {
                 expanded = false
-                if( detectionModel == null ) {
-                    onDetect(null)
-                } else {
-                    onDetect(detectionModel)
-                }
+                detectionModel?.let {
+                    onDetect(it)
+                } ?: Toast.makeText(context, "Choose a model first", Toast.LENGTH_SHORT).show()
             },
             enabled = isDetecting.not(),
             modifier = Modifier.fillMaxWidth().height(60.dp),
